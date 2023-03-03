@@ -1,14 +1,15 @@
 ---
 
 global:
+  # -- domain of this phpipam instance
   domain: "chart-example.local"
   podAnnotations: {}
   database:
-    # name of the database
+    # -- name of the database
     name: "phpipam"
-    # name of the database user, can not be "root"
+    # -- name of the database user, can not be "root"
     user: "phpipam"
-    # password of the db user
+    # -- password of the db user
     password: "phpipam"
 
 phpipam:
@@ -63,7 +64,7 @@ database:
   persistence:
     enabled: true
     size: 30Gi
-    storageClassName: kt-gp3
+    storageClassName: ""
   resources:
     # resources are not mapped yet and therefor not working
     requests:
