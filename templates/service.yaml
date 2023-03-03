@@ -1,0 +1,38 @@
+{{- if .Values.database.installed }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.database.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    component: mysql
+spec:
+  ports:
+    - name: mysql
+      protocol: TCP
+      port: {{ .Values.database.service.port }}
+      targetPort: {{ .Values.database.service.port }}
+  selector:
+    app: {{ .Chart.Name }}
+    component: mysql
+{{- end }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.phpipam.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    component: web
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.phpipam.service.port }}
+      targetPort: {{ .Values.phpipam.service.port }}
+  selector:
+    app: {{ .Chart.Name }}
+    component: web

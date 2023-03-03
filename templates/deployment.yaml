@@ -1,0 +1,162 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Values.phpipam.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      component: web
+  template:
+    metadata:
+      name: {{ .Values.phpipam.name }}
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: {{ .Chart.Name }}
+        component: web
+    spec:
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.phpipam.name }}
+          image: "{{ .Values.phpipam.image.repository }}:{{ .Values.phpipam.image.tag | default .Chart.AppVersion }}"
+          ports:
+            - containerPort: {{ .Values.phpipam.service.port }}
+              protocol: TCP
+              name: http
+          env:
+            - name: "IPAM_DATABASE_HOST"
+              value: {{ .Values.database.name }}
+            - name: "IPAM_DATABASE_USER"
+              value: {{ .Values.global.database.user }}
+            - name: "IPAM_DATABASE_NAME"
+              value: {{ .Values.global.database.name }}
+            - name: "IPAM_DATABASE_WEBHOST"
+              value: "%"
+            - name: "IPAM_DATABASE_PASS"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-{{ .Chart.Name }}-secrets
+                  key: {{ .Chart.Name }}-mysql-pass
+          {{- if .Values.phpipam.widgets }}
+          volumeMounts:
+          {{- range $key, $value := .Values.phpipam.widgets }}
+            - name: "{{ $key | replace "." "-" }}"
+              mountPath: /phpipam/app/dashboard/widgets/{{ $key }}
+              subPath: {{ $key }}
+          {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.phpipam.resources | nindent 12 }}
+      {{- if .Values.phpipam.widgets }}
+      volumes:
+      {{- range $key, $value := .Values.phpipam.widgets }}
+        - name: "{{ $key | replace "." "-" }}"
+          configMap:
+            name: "phpipam-widgets-{{ $key | replace "." "-" }}"
+      {{- end }}
+      {{- end }}
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Values.cron.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      component: cron
+  template:
+    metadata:
+      name: {{ .Values.cron.name }}
+      labels:
+        app: {{ .Chart.Name }}
+        component: cron
+    spec:
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.cron.name }}
+          image: "{{ .Values.cron.image.repository }}:{{ .Values.cron.image.tag | default .Chart.AppVersion }}"
+          env:
+            - name: "IPAM_DATABASE_HOST"
+              value: {{ .Values.database.name }}
+            - name: "IPAM_DATABASE_USER"
+              value: {{ .Values.global.database.user }}
+            - name: "IPAM_DATABASE_NAME"
+              value: {{ .Values.global.database.name }}
+            - name: "IPAM_DATABASE_WEBHOST"
+              value: "%"
+            - name: "SCAN_INTERVAL"
+              value: {{ .Values.cron.scan_interval }}
+            - name: "IPAM_DATABASE_PASS"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-{{ .Chart.Name }}-secrets
+                  key: {{ .Chart.Name }}-mysql-pass
+          resources:
+            {{- toYaml .Values.cron.resources | nindent 12 }}
+{{- if .Values.database.installed }}
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Values.database.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      component: mysql
+  template:
+    metadata:
+      name: {{ .Values.database.name }}
+      labels:
+        app: {{ .Chart.Name }}
+        component: mysql
+    spec:
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.database.name }}
+          image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag | default .Chart.AppVersion }}"
+          ports:
+            - containerPort: {{ .Values.database.service.port }}
+              protocol: TCP
+              name: mysql
+          volumeMounts:
+            - name: {{ .Chart.Name }}-mysql
+              mountPath: /var/lib/mysql
+          env:
+            - name: "MARIADB_RANDOM_ROOT_PASSWORD"
+              value: "yes"
+            - name: "MYSQL_LOG_CONSOLE"
+              value: "true"
+            - name: "MARIADB_DATABASE"
+              value: {{ .Values.global.database.name }}
+            - name: "MARIADB_USER"
+              value: {{ .Values.global.database.user }}
+            - name: "MARIADB_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-{{ .Chart.Name }}-secrets
+                  key: {{ .Chart.Name }}-mysql-pass
+          resources:
+            {{- toYaml .Values.database.resources | nindent 12 }}
+      volumes:
+        - name: {{ .Chart.Name }}-mysql
+          persistentVolumeClaim:
+            claimName: {{ .Chart.Name }}-mysql
+{{- end }}

@@ -1,0 +1,11 @@
+{{- range $key, $value := .Values.phpipam.widgets }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: phpipam-widgets-{{ $key | replace "." "-" }}
+  namespace: {{ $.Release.Namespace }}
+data:
+  {{ $key }}: |
+{{ $value | indent 4}}
+{{- end -}}
