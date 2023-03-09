@@ -18,7 +18,7 @@ phpipam:
     repository: phpipam/phpipam-www
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "v1.5.1"
+    tag: "v1.5.2"
     replicaCount: 1
   service:
     type: ClusterIP
@@ -40,7 +40,7 @@ cron:
   image:
     repository: phpipam/phpipam-cron
     pullPolicy: IfNotPresent
-    tag: "v1.5.1"
+    tag: "v1.5.2"
   scan_interval: 1h
   resources:
     # resources are not mapped yet and therefor not working
