@@ -6,6 +6,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    {{ if .Values.ingress.annotations }}
+    {{ toYaml .Values.ingress.annotations | nindent 4 }}
+    {{ end }}
 spec:
   tls:
     - hosts:
@@ -23,17 +26,3 @@ spec:
                 name: {{ .Values.phpipam.name }}
                 port:
                   number: {{ .Values.phpipam.service.port }}
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: {{ .Chart.Name }}-cert
-  namespace: {{ .Release.Namespace }}
-spec:
-  commonName: {{ .Values.global.domain }}
-  dnsNames:
-    - {{ .Values.global.domain }}
-  issuerRef:
-    kind: ClusterIssuer
-    name: letsencrypt-prod
-  secretName: "{{ .Release.Name }}-{{ .Chart.Name }}-cert"
