@@ -1,0 +1,56 @@
+---
+name: Lint and Test Charts
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.10.0
+
+      - name: local fix to get `actions/setup-python` running
+        run: |
+          # Hack to get setup-python to work on act
+          # (see https://github.com/nektos/act/issues/251)
+          if [ ! -f "/etc/lsb-release" ] ; then
+            echo "DISTRIB_RELEASE=18.04" > /etc/lsb-release
+          fi
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          check-latest: true
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.3.1
+
+      - name: Run chart-testing (list-changed)
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --target-branch master)
+          if [[ -n "$changed" ]]; then
+            echo "::set-output name=changed::true"
+          fi
+
+      - name: Run chart-testing (lint)
+        run: ct lint --target-branch master
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.4.0
+        if: steps.list-changed.outputs.changed == 'true'
+
+      - name: Run chart-testing (install)
+        run: ct install
