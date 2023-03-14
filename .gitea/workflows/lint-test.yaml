@@ -1,8 +1,7 @@
 ---
 name: Lint and Test Charts
 
-on: push
-# on: pull_request
+on: pull_request
 
 jobs:
   lint-test:
@@ -18,7 +17,7 @@ jobs:
         with:
           version: v3.10.0
 
-      - name: local-fix
+      - name: local fix to get `actions/setup-python` running
         run: |
           # Hack to get setup-python to work on act
           # (see https://github.com/nektos/act/issues/251)
