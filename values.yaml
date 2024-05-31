@@ -57,7 +57,7 @@ database:
   image:
     repository: mariadb
     pullPolicy: IfNotPresent
-    tag: "11.3.2"
+    tag: "11.4.2"
   service:
     type: ClusterIP
     port: 3306
